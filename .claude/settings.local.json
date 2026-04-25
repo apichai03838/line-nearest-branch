@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -X POST https://line-nearest-branch-production.up.railway.app/webhook -H 'Content-Type: application/json' -d '{\"events\":[{\"type\":\"message\",\"replyToken\":\"test\",\"message\":{\"type\":\"text\",\"text\":\"📍 Location\"}}]}')"
+    ]
+  }
+}
