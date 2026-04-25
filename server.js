@@ -44,6 +44,38 @@ app.post("/webhook", async (req, res) => {
   const events = req.body.events || [];
 
   for (const event of events) {
+    // ====== รับข้อความ text → ขอพิกัด ======
+    if (event.type === "message" && event.message.type === "text") {
+      const text = event.message.text.trim().toLowerCase();
+      if (text.includes("location") || text.includes("สาขา") || text.includes("📍")) {
+        await axios.post(
+          "https://api.line.me/v2/bot/message/reply",
+          {
+            replyToken: event.replyToken,
+            messages: [{
+              type: "text",
+              text: "กรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาใกล้เคียง 📍",
+              quickReply: {
+                items: [{
+                  type: "action",
+                  action: {
+                    type: "location",
+                    label: "แชร์ตำแหน่งของฉัน"
+                  }
+                }]
+              }
+            }]
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+      }
+    }
+
     if (event.type === "message" && event.message.type === "location") {
       const userLat = event.message.latitude;
       const userLon = event.message.longitude;
