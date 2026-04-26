@@ -300,7 +300,11 @@ app.post("/webhook", async (req, res) => {
           buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
         // แจ้งเตือนสาขาที่ใกล้ที่สุด
-        await pushNotifyBranch(top3[0], topic, top3[0].distance.toFixed(2));
+        try {
+          await pushNotifyBranch(top3[0], topic, top3[0].distance.toFixed(2));
+        } catch (e) {
+          console.error("[PUSH ERROR]", e.response?.data || e.message);
+        }
       } else {
         userState.delete(userId);
         await replyMessage(event.replyToken, [
