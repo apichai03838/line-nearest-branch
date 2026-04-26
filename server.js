@@ -118,10 +118,11 @@ app.post("/webhook", async (req, res) => {
             },
             {
               type: "button",
-              style: "secondary",
+              style: "primary",
+              color: "#27AE60",
               action: {
                 type: "uri",
-                label: "โทรหาสาขา",
+                label: "ติดต่อสอบถาม",
                 uri: `tel:${b.phone}`
               }
             }
