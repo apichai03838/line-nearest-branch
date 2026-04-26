@@ -107,6 +107,11 @@ app.post("/webhook", async (req, res) => {
   for (const event of events) {
     const userId = event.source?.userId;
 
+    // ====== log groupId (ลบออกหลังได้ครบทุกสาขา) ======
+    if (event.source?.type === "group") {
+      console.log(`[GROUP ID] ${event.source.groupId}`);
+    }
+
     // ====== รับข้อความ text ======
     if (event.type === "message" && event.message.type === "text") {
       const text = event.message.text.trim();
