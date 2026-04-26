@@ -43,6 +43,7 @@ function mapLink(lat, lon) {
 const userState = new Map();
 
 const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "เครื่องดับ", "อื่นๆ"];
+const inquiryTopics = ["สอบถามราคา", "สอบถามไฟแนนซ์", "เช็คสินค้าในสต็อก", "อื่นๆ"];
 
 async function replyMessage(replyToken, messages) {
   await axios.post(
@@ -57,7 +58,7 @@ async function replyMessage(replyToken, messages) {
   );
 }
 
-function buildBranchCarousel(top3, headerText) {
+function buildBranchCarousel(top3, headerText, phoneLabel = "ติดต่อสอบถาม") {
   const bubbles = top3.map(b => ({
     type: "bubble",
     body: {
@@ -86,7 +87,7 @@ function buildBranchCarousel(top3, headerText) {
           type: "button",
           style: "primary",
           color: "#27AE60",
-          action: { type: "uri", label: "ติดต่อสอบถาม", uri: `tel:${b.phone}` }
+          action: { type: "uri", label: phoneLabel, uri: `tel:${b.phone}` }
         }
       ]
     }
@@ -109,6 +110,62 @@ app.post("/webhook", async (req, res) => {
     // ====== รับข้อความ text ======
     if (event.type === "message" && event.message.type === "text") {
       const text = event.message.text.trim();
+
+      // --- ติดต่อสอบถาม → ถามหัวข้อ (Flex Menu) ---
+      if (text.includes("ติดต่อสอบถาม") || text.includes("ติดต่อ")) {
+        userState.set(userId, { flow: "inquiry", step: "topic" });
+
+        const rows = [];
+        for (let i = 0; i < inquiryTopics.length; i += 2) {
+          rows.push({
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: inquiryTopics.slice(i, i + 2).map(t => ({
+              type: "button",
+              style: "primary",
+              color: "#FFC83D",
+              action: { type: "message", label: t, text: t },
+              flex: 1
+            }))
+          });
+        }
+
+        await replyMessage(event.replyToken, [{
+          type: "flex",
+          altText: "เลือกหัวข้อสอบถาม",
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                { type: "text", text: "💬 ต้องการสอบถามเรื่องอะไรครับ?", weight: "bold", size: "md", wrap: true },
+                { type: "separator", margin: "sm" },
+                ...rows
+              ]
+            }
+          }
+        }]);
+        continue;
+      }
+
+      // --- เลือกหัวข้อแล้ว → ขอพิกัด ---
+      if (inquiryTopics.includes(text) && userState.get(userId)?.step === "topic") {
+        userState.set(userId, { flow: "inquiry", step: "location", topic: text });
+        await replyMessage(event.replyToken, [{
+          type: "text",
+          text: `รับทราบครับ หัวข้อ: ${text} 📋\nกรุณาแชร์ตำแหน่งของคุณ เพื่อให้ทีมงานสาขาใกล้คุณติดต่อกลับ 📍`,
+          quickReply: {
+            items: [{
+              type: "action",
+              action: { type: "location", label: "แชร์ตำแหน่งของฉัน" }
+            }]
+          }
+        }]);
+        continue;
+      }
 
       // --- ซ่อมมือถือ → ถามอาการ (Flex Menu) ---
       if (text.includes("ซ่อมมือถือ") || text.includes("ซ่อม")) {
@@ -204,7 +261,17 @@ app.post("/webhook", async (req, res) => {
             type: "text",
             text: `🔧 อาการ: ${symptom}\nสาขาซ่อมใกล้คุณ 3 อันดับแรก`
           },
-          buildBranchCarousel(top3, "🔧 รับซ่อมใกล้คุณ")
+          buildBranchCarousel(top3, "🔧 รับซ่อมใกล้คุณ", "ติดต่อสอบถาม")
+        ]);
+      } else if (state?.flow === "inquiry") {
+        const topic = state.topic;
+        userState.delete(userId);
+        await replyMessage(event.replyToken, [
+          {
+            type: "text",
+            text: `💬 หัวข้อ: ${topic}\nสาขาใกล้คุณ 3 อันดับแรก โทรหาเราได้เลยครับ 📞`
+          },
+          buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
       } else {
         userState.delete(userId);
