@@ -8,16 +8,16 @@ const CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN;
 
 // ====== สาขา (พิกัดจริงของคุณ) ======
 const branches = [
-  { name: "สาขา 30 กันยา โคราช", lat: 14.9916966, lon: 102.1150255, phone: "0812345671", hours: "08:00 - 18:00" },
-  { name: "สาขาหนองปรือ โคราช", lat: 14.928936, lon: 102.104462, phone: "0812345672", hours: "08:00 - 18:00" },
-  { name: "สาขาหนองลุมพุก", lat: 15.449482, lon: 101.862531, phone: "0812345673", hours: "08:00 - 18:00" },
-  { name: "สาขาหนองฉิม", lat: 15.561264, lon: 101.956739, phone: "0812345674", hours: "08:00 - 18:00" },
-  { name: "สาขาหนองบัวแดง", lat: 16.077880, lon: 101.799314, phone: "0812345675", hours: "08:00 - 18:00" },
-  { name: "สาขาจัตุรัส แยกไฟแดง", lat: 15.563173, lon: 101.849556, phone: "0812345676", hours: "08:00 - 18:00" },
-  { name: "สาขาจัตุรัส สำนักงานใหญ่", lat: 15.567588, lon: 101.848530, phone: "0812345677", hours: "08:00 - 18:00" },
-  { name: "สาขาบ้านเขว้า", lat: 15.770060, lon: 101.909227, phone: "0812345678", hours: "08:00 - 18:00" },
-  { name: "สาขาบ้านค่าย", lat: 15.685893, lon: 102.010923, phone: "0812345679", hours: "08:00 - 18:00" },
-  { name: "สาขาโลตัส ภูเขียว (แพรวพรรณโมบาย)", lat: 16.364112, lon: 102.139374, phone: "0812345670", hours: "08:00 - 18:00" }
+  { name: "สาขา 30 กันยา โคราช", lat: 14.9916966, lon: 102.1150255, phone: "0812345671", hours: "08:00 - 18:00", groupId: "Caa030cc7ec62663c8ea69ce3f5affac9" },
+  { name: "สาขาหนองปรือ โคราช", lat: 14.928936, lon: 102.104462, phone: "0812345672", hours: "08:00 - 18:00", groupId: "Cb62cae9ab1cb1b3526b20e37e15ab51e" },
+  { name: "สาขาหนองลุมพุก", lat: 15.449482, lon: 101.862531, phone: "0812345673", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาหนองฉิม", lat: 15.561264, lon: 101.956739, phone: "0812345674", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาหนองบัวแดง", lat: 16.077880, lon: 101.799314, phone: "0812345675", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาจัตุรัส แยกไฟแดง", lat: 15.563173, lon: 101.849556, phone: "0812345676", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาจัตุรัส สำนักงานใหญ่", lat: 15.567588, lon: 101.848530, phone: "0812345677", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาบ้านเขว้า", lat: 15.770060, lon: 101.909227, phone: "0812345678", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาบ้านค่าย", lat: 15.685893, lon: 102.010923, phone: "0812345679", hours: "08:00 - 18:00", groupId: null },
+  { name: "สาขาโลตัส ภูเขียว (แพรวพรรณโมบาย)", lat: 16.364112, lon: 102.139374, phone: "0812345670", hours: "08:00 - 18:00", groupId: null }
 ];
 
 // ====== คำนวณระยะ (km) ======
@@ -44,6 +44,26 @@ const userState = new Map();
 
 const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "เครื่องดับ", "อื่นๆ"];
 const inquiryTopics = ["สอบถามราคา", "สอบถามไฟแนนซ์", "เช็คสินค้าในสต็อก", "อื่นๆ"];
+
+async function pushNotifyBranch(branch, topic, distance) {
+  if (!branch.groupId) return;
+  await axios.post(
+    "https://api.line.me/v2/bot/message/push",
+    {
+      to: branch.groupId,
+      messages: [{
+        type: "text",
+        text: `🔔 มีลูกค้าติดต่อเข้ามาใน LINE OA\n📋 หัวข้อ: ${topic}\n📍 ใกล้${branch.name} (${distance} กม.)\n\n👉 รีบเข้าไปตอบได้เลยค่ะ`
+      }]
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+}
 
 async function replyMessage(replyToken, messages) {
   await axios.post(
@@ -279,6 +299,8 @@ app.post("/webhook", async (req, res) => {
           },
           buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
+        // แจ้งเตือนสาขาที่ใกล้ที่สุด
+        await pushNotifyBranch(top3[0], topic, top3[0].distance.toFixed(2));
       } else {
         userState.delete(userId);
         await replyMessage(event.replyToken, [
