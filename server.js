@@ -39,48 +39,131 @@ function mapLink(lat, lon) {
   return `https://www.google.com/maps?q=${lat},${lon}`;
 }
 
+// ====== State จำอาการที่ลูกค้าเลือก ======
+const userState = new Map();
+
+const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "พอร์ตเสีย", "โดนน้ำ", "อื่นๆ"];
+
+async function replyMessage(replyToken, messages) {
+  await axios.post(
+    "https://api.line.me/v2/bot/message/reply",
+    { replyToken, messages },
+    {
+      headers: {
+        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+}
+
+function buildBranchCarousel(top3, headerText) {
+  const bubbles = top3.map(b => ({
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        { type: "text", text: headerText, size: "sm", color: "#888888" },
+        { type: "text", text: b.name, weight: "bold", size: "md", wrap: true },
+        { type: "text", text: `ระยะ ${b.distance.toFixed(2)} กม.`, size: "sm", color: "#888888", margin: "sm" },
+        { type: "text", text: `🕐 ${b.hours}`, size: "sm", color: "#888888", margin: "sm" },
+        { type: "text", text: `📞 ${b.phone}`, size: "sm", color: "#888888", margin: "sm" }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#FFC83D",
+          action: { type: "uri", label: "นำทาง", uri: mapLink(b.lat, b.lon) }
+        },
+        {
+          type: "button",
+          style: "primary",
+          color: "#27AE60",
+          action: { type: "uri", label: "ติดต่อสอบถาม", uri: `tel:${b.phone}` }
+        }
+      ]
+    }
+  }));
+
+  return {
+    type: "flex",
+    altText: "สาขาใกล้คุณ",
+    contents: { type: "carousel", contents: bubbles }
+  };
+}
+
 // ====== Webhook ======
 app.post("/webhook", async (req, res) => {
   const events = req.body.events || [];
 
   for (const event of events) {
-    // ====== รับข้อความ text → ขอพิกัด ======
+    const userId = event.source?.userId;
+
+    // ====== รับข้อความ text ======
     if (event.type === "message" && event.message.type === "text") {
-      const text = event.message.text.trim().toLowerCase();
-      if (text.includes("location") || text.includes("สาขา") || text.includes("📍")) {
-        await axios.post(
-          "https://api.line.me/v2/bot/message/reply",
-          {
-            replyToken: event.replyToken,
-            messages: [{
-              type: "text",
-              text: "กรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาใกล้เคียง 📍",
-              quickReply: {
-                items: [{
-                  type: "action",
-                  action: {
-                    type: "location",
-                    label: "แชร์ตำแหน่งของฉัน"
-                  }
-                }]
-              }
-            }]
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-              "Content-Type": "application/json"
-            }
+      const text = event.message.text.trim();
+
+      // --- ซ่อมมือถือ → ถามอาการ ---
+      if (text.includes("ซ่อมมือถือ") || text.includes("ซ่อม")) {
+        userState.set(userId, { flow: "repair", step: "symptom" });
+        await replyMessage(event.replyToken, [{
+          type: "text",
+          text: "อาการเครื่องเป็นอย่างไรครับ? 🔧",
+          quickReply: {
+            items: symptoms.map(s => ({
+              type: "action",
+              action: { type: "message", label: s, text: s }
+            }))
           }
-        );
+        }]);
+        continue;
+      }
+
+      // --- เลือกอาการแล้ว → ขอพิกัด ---
+      if (symptoms.includes(text) && userState.get(userId)?.step === "symptom") {
+        userState.set(userId, { flow: "repair", step: "location", symptom: text });
+        await replyMessage(event.replyToken, [{
+          type: "text",
+          text: `รับทราบครับ อาการ: ${text} 📋\nกรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาซ่อมใกล้เคียง 📍`,
+          quickReply: {
+            items: [{
+              type: "action",
+              action: { type: "location", label: "แชร์ตำแหน่งของฉัน" }
+            }]
+          }
+        }]);
+        continue;
+      }
+
+      // --- หาสาขาทั่วไป ---
+      if (text.toLowerCase().includes("location") || text.includes("สาขา") || text.includes("📍")) {
+        userState.set(userId, { flow: "branch", step: "location" });
+        await replyMessage(event.replyToken, [{
+          type: "text",
+          text: "กรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาใกล้เคียง 📍",
+          quickReply: {
+            items: [{
+              type: "action",
+              action: { type: "location", label: "แชร์ตำแหน่งของฉัน" }
+            }]
+          }
+        }]);
+        continue;
       }
     }
 
     if (event.type === "message" && event.message.type === "location") {
       const userLat = event.message.latitude;
       const userLon = event.message.longitude;
+      const state = userState.get(userId);
 
-      // คำนวณ + เรียง
       const sorted = branches.map(b => ({
         ...b,
         distance: getDistance(userLat, userLon, b.lat, b.lon)
@@ -88,65 +171,22 @@ app.post("/webhook", async (req, res) => {
 
       const top3 = sorted.slice(0, 3);
 
-      const bubbles = top3.map(b => ({
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            { type: "text", text: "📍 ใกล้คุณ", size: "sm", color: "#888888" },
-            { type: "text", text: b.name, weight: "bold", size: "md", wrap: true },
-            { type: "text", text: `ระยะ ${b.distance.toFixed(2)} กม.`, size: "sm", color: "#888888", margin: "sm" },
-            { type: "text", text: `🕐 ${b.hours}`, size: "sm", color: "#888888", margin: "sm" },
-            { type: "text", text: `📞 ${b.phone}`, size: "sm", color: "#888888", margin: "sm" }
-          ]
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          spacing: "sm",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#FFC83D",
-              action: {
-                type: "uri",
-                label: "นำทาง",
-                uri: mapLink(b.lat, b.lon)
-              }
-            },
-            {
-              type: "button",
-              style: "primary",
-              color: "#27AE60",
-              action: {
-                type: "uri",
-                label: "ติดต่อสอบถาม",
-                uri: `tel:${b.phone}`
-              }
-            }
-          ]
-        }
-      }));
-
-      await axios.post(
-        "https://api.line.me/v2/bot/message/reply",
-        {
-          replyToken: event.replyToken,
-          messages: [{
-            type: "flex",
-            altText: "สาขาใกล้คุณ",
-            contents: { type: "carousel", contents: bubbles }
-          }]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      if (state?.flow === "repair") {
+        const symptom = state.symptom;
+        userState.delete(userId);
+        await replyMessage(event.replyToken, [
+          {
+            type: "text",
+            text: `🔧 อาการ: ${symptom}\nสาขาซ่อมใกล้คุณ 3 อันดับแรก`
+          },
+          buildBranchCarousel(top3, "🔧 รับซ่อมใกล้คุณ")
+        ]);
+      } else {
+        userState.delete(userId);
+        await replyMessage(event.replyToken, [
+          buildBranchCarousel(top3, "📍 ใกล้คุณ")
+        ]);
+      }
     }
   }
 
