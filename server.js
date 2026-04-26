@@ -66,13 +66,13 @@ async function pushNotify(text) {
 
 async function pushNotifyBranch(branch, topic, distance) {
   await pushNotify(
-    `━━━━━━━━━━━━━━━━\n💬 ลูกค้าติดต่อเข้ามาใหม่!\n━━━━━━━━━━━━━━━━\n📋 หัวข้อ: ${topic}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n━━━━━━━━━━━━━━━━\n👉 รีบเข้าไปตอบได้เลยค่ะ`
+    `─────────\n💬 ลูกค้าติดต่อเข้ามาใหม่!\n─────────\n📋 หัวข้อ: ${topic}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n─────────\n👉 รีบเข้าไปตอบได้เลยค่ะ`
   );
 }
 
 async function pushNotifyRepair(branch, symptom, distance) {
   await pushNotify(
-    `━━━━━━━━━━━━━━━━\n🔔 แจ้งซ่อมเข้ามาใหม่!\n━━━━━━━━━━━━━━━━\n🔧 อาการ: ${symptom}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n━━━━━━━━━━━━━━━━\n👉 รีบเข้าไปตอบได้เลยค่ะ`
+    `─────────\n🔔 แจ้งซ่อมเข้ามาใหม่!\n─────────\n🔧 อาการ: ${symptom}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n─────────\n👉 รีบเข้าไปตอบได้เลยค่ะ`
   );
 }
 
