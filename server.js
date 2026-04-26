@@ -269,7 +269,7 @@ app.post("/webhook", async (req, res) => {
         await replyMessage(event.replyToken, [
           {
             type: "text",
-            text: `💬 หัวข้อ: ${topic}\nสาขาใกล้คุณ 3 อันดับแรก โทรหาเราได้เลยครับ 📞`
+            text: `สาขาใกล้คุณ 3 อันดับแรก\nโทรหาเราได้เลย 📞`
           },
           buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
