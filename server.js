@@ -42,7 +42,7 @@ function mapLink(lat, lon) {
 // ====== State จำอาการที่ลูกค้าเลือก ======
 const userState = new Map();
 
-const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "พอร์ตเสีย", "โดนน้ำ", "เครื่องดับ", "อื่นๆ"];
+const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "เครื่องดับ", "อื่นๆ"];
 
 async function replyMessage(replyToken, messages) {
   await axios.post(
@@ -114,14 +114,14 @@ app.post("/webhook", async (req, res) => {
       if (text.includes("ซ่อมมือถือ") || text.includes("ซ่อม")) {
         userState.set(userId, { flow: "repair", step: "symptom" });
 
-        // แบ่งปุ่มเป็นแถวๆ ละ 3 ปุ่ม
+        // แบ่งปุ่มเป็นแถวๆ ละ 2 ปุ่ม
         const rows = [];
-        for (let i = 0; i < symptoms.length; i += 3) {
+        for (let i = 0; i < symptoms.length; i += 2) {
           rows.push({
             type: "box",
             layout: "horizontal",
             spacing: "sm",
-            contents: symptoms.slice(i, i + 3).map(s => ({
+            contents: symptoms.slice(i, i + 2).map(s => ({
               type: "button",
               style: "primary",
               color: "#FFC83D",
