@@ -48,15 +48,12 @@ const userState = new Map();
 const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "เครื่องดับ", "อื่นๆ"];
 const inquiryTopics = ["สอบถามราคา", "สอบถามไฟแนนซ์", "เช็คสินค้าในสต็อก", "อื่นๆ"];
 
-async function pushNotifyBranch(branch, topic, distance) {
+async function pushNotify(text) {
   await axios.post(
     "https://api.line.me/v2/bot/message/push",
     {
       to: STAFF_GROUP_ID,
-      messages: [{
-        type: "text",
-        text: `🔔 มีลูกค้าติดต่อเข้ามาใน LINE OA\n📋 หัวข้อ: ${topic}\n📍 ใกล้${branch.name}\n(${distance} กม.)\n\n👉 รีบเข้าไปตอบได้เลยค่ะ`
-      }]
+      messages: [{ type: "text", text }]
     },
     {
       headers: {
@@ -64,6 +61,18 @@ async function pushNotifyBranch(branch, topic, distance) {
         "Content-Type": "application/json"
       }
     }
+  );
+}
+
+async function pushNotifyBranch(branch, topic, distance) {
+  await pushNotify(
+    `━━━━━━━━━━━━━━━━\n💬 ลูกค้าติดต่อเข้ามาใหม่!\n━━━━━━━━━━━━━━━━\n📋 หัวข้อ: ${topic}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n━━━━━━━━━━━━━━━━\n👉 รีบเข้าไปตอบได้เลยค่ะ`
+  );
+}
+
+async function pushNotifyRepair(branch, symptom, distance) {
+  await pushNotify(
+    `━━━━━━━━━━━━━━━━\n🔔 แจ้งซ่อมเข้ามาใหม่!\n━━━━━━━━━━━━━━━━\n🔧 อาการ: ${symptom}\n📍 ${branch.name}\n📏 ระยะ ${distance} กม.\n━━━━━━━━━━━━━━━━\n👉 รีบเข้าไปตอบได้เลยค่ะ`
   );
 }
 
@@ -291,6 +300,11 @@ app.post("/webhook", async (req, res) => {
           },
           buildBranchCarousel(top3, "🔧 รับซ่อมใกล้คุณ", "ติดต่อสอบถาม")
         ]);
+        try {
+          await pushNotifyRepair(top3[0], symptom, top3[0].distance.toFixed(2));
+        } catch (e) {
+          console.error("[PUSH ERROR]", e.response?.data || e.message);
+        }
       } else if (state?.flow === "inquiry") {
         const topic = state.topic;
         userState.delete(userId);
