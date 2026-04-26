@@ -42,7 +42,7 @@ function mapLink(lat, lon) {
 // ====== State จำอาการที่ลูกค้าเลือก ======
 const userState = new Map();
 
-const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "พอร์ตเสีย", "โดนน้ำ", "อื่นๆ"];
+const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "พอร์ตเสีย", "โดนน้ำ", "เครื่องดับ", "อื่นๆ"];
 
 async function replyMessage(replyToken, messages) {
   await axios.post(
@@ -110,17 +110,42 @@ app.post("/webhook", async (req, res) => {
     if (event.type === "message" && event.message.type === "text") {
       const text = event.message.text.trim();
 
-      // --- ซ่อมมือถือ → ถามอาการ ---
+      // --- ซ่อมมือถือ → ถามอาการ (Flex Menu) ---
       if (text.includes("ซ่อมมือถือ") || text.includes("ซ่อม")) {
         userState.set(userId, { flow: "repair", step: "symptom" });
-        await replyMessage(event.replyToken, [{
-          type: "text",
-          text: "อาการเครื่องเป็นอย่างไรครับ? 🔧",
-          quickReply: {
-            items: symptoms.map(s => ({
-              type: "action",
-              action: { type: "message", label: s, text: s }
+
+        // แบ่งปุ่มเป็นแถวๆ ละ 3 ปุ่ม
+        const rows = [];
+        for (let i = 0; i < symptoms.length; i += 3) {
+          rows.push({
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: symptoms.slice(i, i + 3).map(s => ({
+              type: "button",
+              style: "primary",
+              color: "#FFC83D",
+              action: { type: "message", label: s, text: s },
+              flex: 1
             }))
+          });
+        }
+
+        await replyMessage(event.replyToken, [{
+          type: "flex",
+          altText: "เลือกอาการเครื่อง",
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                { type: "text", text: "🔧 อาการเครื่องเป็นอย่างไร?", weight: "bold", size: "md", wrap: true },
+                { type: "separator", margin: "sm" },
+                ...rows
+              ]
+            }
           }
         }]);
         continue;
