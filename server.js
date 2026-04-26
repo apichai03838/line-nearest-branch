@@ -53,7 +53,7 @@ async function pushNotifyBranch(branch, topic, distance) {
       to: branch.groupId,
       messages: [{
         type: "text",
-        text: `🔔 มีลูกค้าติดต่อเข้ามาใน LINE OA\n📋 หัวข้อ: ${topic}\n📍 ใกล้${branch.name} (${distance} กม.)\n\n👉 รีบเข้าไปตอบได้เลยค่ะ`
+        text: `🔔 มีลูกค้าติดต่อเข้ามาใน LINE OA\n📋 หัวข้อ: ${topic}\n📍 ใกล้${branch.name}\n(${distance} กม.)\n\n👉 รีบเข้าไปตอบได้เลยค่ะ`
       }]
     },
     {
