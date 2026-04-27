@@ -46,7 +46,7 @@ const STAFF_GROUP_ID = "Cb62cae9ab1cb1b3526b20e37e15ab51e";
 const userState = new Map();
 
 const symptoms = ["จอแตก", "แบตเสื่อม", "กล้องเสีย", "ลำโพงเสีย", "เครื่องดับ", "อื่นๆ"];
-const inquiryTopics = ["สอบถามราคา", "สอบถามไฟแนนซ์", "เช็คสินค้าในสต็อก", "สาขาใกล้ฉัน", "อื่นๆ"];
+const inquiryTopics = ["สอบถามราคา", "สอบถามผ่อน", "เช็คสินค้าในสต็อก", "สาขาใกล้ฉัน", "อื่นๆ"];
 
 async function pushNotify(text) {
   await axios.post(
