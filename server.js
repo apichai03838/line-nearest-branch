@@ -1,10 +1,33 @@
 const express = require("express");
 const axios = require("axios");
+const { google } = require("googleapis");
 
 const app = express();
 app.use(express.json());
 
 const CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN;
+const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const GOOGLE_CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+async function appendToSheet(row) {
+  try {
+    const auth = new google.auth.JWT({
+      email: GOOGLE_CLIENT_EMAIL,
+      key: GOOGLE_PRIVATE_KEY,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+    });
+    const sheets = google.sheets({ version: "v4", auth });
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: GOOGLE_SHEET_ID,
+      range: "Sheet1!A:I",
+      valueInputOption: "USER_ENTERED",
+      resource: { values: [row] }
+    });
+  } catch (e) {
+    console.error("[SHEETS ERROR]", e.message);
+  }
+}
 
 // ====== สาขา (พิกัดจริงของคุณ) ======
 const branches = [
@@ -290,6 +313,9 @@ app.post("/webhook", async (req, res) => {
 
       const top3 = sorted.slice(0, 3);
 
+      const now = new Date().toLocaleString("th-TH", { timeZone: "Asia/Bangkok" });
+      const mapsLink = `https://www.google.com/maps?q=${userLat},${userLon}`;
+
       if (state?.flow === "repair") {
         const symptom = state.symptom;
         userState.delete(userId);
@@ -305,6 +331,7 @@ app.post("/webhook", async (req, res) => {
         } catch (e) {
           console.error("[PUSH ERROR]", e.response?.data || e.message);
         }
+        await appendToSheet([now, userId, userLat, userLon, mapsLink, "ซ่อมมือถือ", symptom, top3[0].name, top3[0].distance.toFixed(2)]);
       } else if (state?.flow === "inquiry") {
         const topic = state.topic;
         userState.delete(userId);
@@ -315,7 +342,6 @@ app.post("/webhook", async (req, res) => {
           },
           buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
-        // แจ้งเตือนกลุ่ม (ยกเว้น สาขาใกล้ฉัน)
         if (topic !== "สาขาใกล้ฉัน") {
           try {
             await pushNotifyBranch(top3[0], topic, top3[0].distance.toFixed(2));
@@ -323,11 +349,13 @@ app.post("/webhook", async (req, res) => {
             console.error("[PUSH ERROR]", e.response?.data || e.message);
           }
         }
+        await appendToSheet([now, userId, userLat, userLon, mapsLink, "ติดต่อสอบถาม", topic, top3[0].name, top3[0].distance.toFixed(2)]);
       } else {
         userState.delete(userId);
         await replyMessage(event.replyToken, [
           buildBranchCarousel(top3, "📍 ใกล้คุณ")
         ]);
+        await appendToSheet([now, userId, userLat, userLon, mapsLink, "หาสาขา", "-", top3[0].name, top3[0].distance.toFixed(2)]);
       }
     }
   }
