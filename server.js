@@ -175,19 +175,25 @@ app.post("/webhook", async (req, res) => {
       if (text.includes("ติดต่อสอบถาม") || text.includes("ติดต่อ")) {
         userState.set(userId, { flow: "inquiry", step: "topic" });
 
+        const soloTopics = ["รายละเอียดการสะสมแต้มและสแตมป์", "อื่นๆ"];
+        const pairTopics = inquiryTopics.filter(t => !soloTopics.includes(t));
         const rows = [];
-        for (let i = 0; i < inquiryTopics.length; i += 2) {
+        for (let i = 0; i < pairTopics.length; i += 2) {
           rows.push({
-            type: "box",
-            layout: "horizontal",
-            spacing: "sm",
-            contents: inquiryTopics.slice(i, i + 2).map(t => ({
-              type: "button",
-              style: "primary",
-              color: "#FFC83D",
-              action: { type: "message", label: t, text: t },
-              flex: 1
+            type: "box", layout: "horizontal", spacing: "sm",
+            contents: pairTopics.slice(i, i + 2).map(t => ({
+              type: "button", style: "primary", color: "#FFC83D",
+              action: { type: "message", label: t, text: t }, flex: 1
             }))
+          });
+        }
+        for (const t of soloTopics) {
+          rows.push({
+            type: "box", layout: "horizontal", spacing: "sm",
+            contents: [{
+              type: "button", style: "primary", color: "#FFC83D",
+              action: { type: "message", label: t, text: t }, flex: 1
+            }]
           });
         }
 
