@@ -222,7 +222,7 @@ app.post("/webhook", async (req, res) => {
         userState.set(userId, { flow: "inquiry", step: "location", topic: text });
         await replyMessage(event.replyToken, [{
           type: "text",
-          text: `รับทราบครับ หัวข้อ: ${text} 📋\nกรุณาแชร์ตำแหน่งของคุณ เพื่อให้ทีมงานสาขาใกล้คุณติดต่อกลับ 📍`,
+          text: `รับทราบครับ 📋\nหัวข้อ: ${text}\n\nกรุณาแชร์ตำแหน่งของคุณ\nเพื่อให้ทีมงานสาขาใกล้คุณติดต่อกลับ 📍`,
           quickReply: {
             items: [{
               type: "action",
@@ -279,7 +279,7 @@ app.post("/webhook", async (req, res) => {
         userState.set(userId, { flow: "repair", step: "location", symptom: text });
         await replyMessage(event.replyToken, [{
           type: "text",
-          text: `รับทราบครับ อาการ: ${text} 📋\nกรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาซ่อมใกล้เคียง 📍`,
+          text: `รับทราบครับ 📋\nอาการ: ${text}\n\nกรุณาแชร์ตำแหน่งของคุณ\nเพื่อค้นหาสาขาซ่อมใกล้เคียง 📍`,
           quickReply: {
             items: [{
               type: "action",
@@ -295,7 +295,7 @@ app.post("/webhook", async (req, res) => {
         userState.set(userId, { flow: "branch", step: "location" });
         await replyMessage(event.replyToken, [{
           type: "text",
-          text: "กรุณาแชร์ตำแหน่งของคุณ เพื่อค้นหาสาขาใกล้เคียง 📍",
+          text: "กรุณาแชร์ตำแหน่งของคุณ\nเพื่อค้นหาสาขาใกล้เคียง 📍",
           quickReply: {
             items: [{
               type: "action",
@@ -328,7 +328,7 @@ app.post("/webhook", async (req, res) => {
         await replyMessage(event.replyToken, [
           {
             type: "text",
-            text: `🔧 อาการ: ${symptom}\nสาขาซ่อมใกล้คุณ 3 อันดับแรก`
+            text: `🔧 อาการ: ${symptom}\n\n📍 สาขาซ่อมใกล้คุณ 3 อันดับแรก`
           },
           buildBranchCarousel(top3, "🔧 รับซ่อมใกล้คุณ", "ติดต่อสอบถาม")
         ]);
@@ -370,7 +370,7 @@ app.post("/webhook", async (req, res) => {
               }
             }
           },
-          { type: "text", text: "📍 สาขาใกล้คุณ 3 อันดับแรก" },
+          { type: "text", text: "─────────\n📍 สาขาที่ใกล้คุณที่สุด 3 อันดับแรก\n─────────" },
           buildBranchCarousel(top3, "📍 ใกล้คุณ", "ติดต่อสอบถาม")
         ]);
         await appendToSheet([now, userId, userLat, userLon, mapsLink, "ติดต่อสอบถาม", "รายละเอียดการสะสมแต้มและสแตมป์", top3[0].name, top3[0].distance.toFixed(2)]);
@@ -380,7 +380,7 @@ app.post("/webhook", async (req, res) => {
         await replyMessage(event.replyToken, [
           {
             type: "text",
-            text: `สาขาใกล้คุณ 3 อันดับแรก\nโทรหาเราได้เลย 📞`
+            text: `📍 สาขาใกล้คุณ 3 อันดับแรก\nโทรหาเราได้เลยครับ 📞`
           },
           buildBranchCarousel(top3, "💬 ใกล้คุณ", "โทรหาเราเลย")
         ]);
