@@ -370,7 +370,6 @@ app.post("/webhook", async (req, res) => {
               }
             }
           },
-          { type: "text", text: "─────────\n📍 สาขาที่ใกล้คุณที่สุด 3 อันดับแรก\n─────────" },
           buildBranchCarousel(top3, "📍 ใกล้คุณ", "ติดต่อสอบถาม")
         ]);
         await appendToSheet([now, userId, userLat, userLon, mapsLink, "ติดต่อสอบถาม", "รายละเอียดการสะสมแต้มและสแตมป์", top3[0].name, top3[0].distance.toFixed(2)]);
