@@ -340,35 +340,39 @@ app.post("/webhook", async (req, res) => {
         await appendToSheet([now, userId, userLat, userLon, mapsLink, "ซ่อมมือถือ", symptom, top3[0].name, top3[0].distance.toFixed(2)]);
       } else if (state?.flow === "inquiry" && state.topic === "รายละเอียดการสะสมแต้มและสแตมป์") {
         userState.delete(userId);
-        await replyMessage(event.replyToken, [{
-          type: "flex",
-          altText: "รายละเอียดการสะสมแต้มและสแตมป์",
-          contents: {
-            type: "bubble",
-            header: {
-              type: "box",
-              layout: "vertical",
-              backgroundColor: "#FFC83D",
-              contents: [
-                { type: "text", text: "⭐ สะสมแต้ม & สแตมป์", weight: "bold", size: "lg", color: "#ffffff" }
-              ]
-            },
-            body: {
-              type: "box",
-              layout: "vertical",
-              spacing: "md",
-              contents: [
-                { type: "text", text: "📌 เงื่อนไขการสะสมแต้ม", weight: "bold", size: "sm" },
-                { type: "text", text: "• ซื้อสินค้าครบ 100 บาท รับ 1 แต้ม\n• สะสมครบ 50 แต้ม รับส่วนลด 100 บาท\n• แต้มมีอายุ 1 ปีนับจากวันที่รับ", wrap: true, size: "sm", color: "#555555" },
-                { type: "separator", margin: "md" },
-                { type: "text", text: "📌 เงื่อนไขสแตมป์", weight: "bold", size: "sm", margin: "md" },
-                { type: "text", text: "• ซ่อมมือถือ 1 ครั้ง รับ 1 สแตมป์\n• สะสมครบ 5 สแตมป์ รับซ่อมฟรี 1 รายการ\n• สแตมป์ไม่มีวันหมดอายุ", wrap: true, size: "sm", color: "#555555" },
-                { type: "separator", margin: "md" },
-                { type: "text", text: "⚠️ ข้อมูลนี้เป็นตัวอย่างเท่านั้น\nโปรดติดต่อสาขาเพื่อข้อมูลที่ถูกต้อง", wrap: true, size: "xs", color: "#aaaaaa", margin: "md" }
-              ]
+        await replyMessage(event.replyToken, [
+          {
+            type: "flex",
+            altText: "รายละเอียดการสะสมแต้มและสแตมป์",
+            contents: {
+              type: "bubble",
+              header: {
+                type: "box",
+                layout: "vertical",
+                backgroundColor: "#FFC83D",
+                contents: [
+                  { type: "text", text: "⭐ สะสมแต้ม & สแตมป์", weight: "bold", size: "lg", color: "#ffffff" }
+                ]
+              },
+              body: {
+                type: "box",
+                layout: "vertical",
+                spacing: "md",
+                contents: [
+                  { type: "text", text: "📌 เงื่อนไขการสะสมแต้ม", weight: "bold", size: "sm" },
+                  { type: "text", text: "• ซื้อสินค้าครบ 100 บาท รับ 1 แต้ม\n• สะสมครบ 50 แต้ม รับส่วนลด 100 บาท\n• แต้มมีอายุ 1 ปีนับจากวันที่รับ", wrap: true, size: "sm", color: "#555555" },
+                  { type: "separator", margin: "md" },
+                  { type: "text", text: "📌 เงื่อนไขสแตมป์", weight: "bold", size: "sm", margin: "md" },
+                  { type: "text", text: "• ซ่อมมือถือ 1 ครั้ง รับ 1 สแตมป์\n• สะสมครบ 5 สแตมป์ รับซ่อมฟรี 1 รายการ\n• สแตมป์ไม่มีวันหมดอายุ", wrap: true, size: "sm", color: "#555555" },
+                  { type: "separator", margin: "md" },
+                  { type: "text", text: "⚠️ ข้อมูลนี้เป็นตัวอย่างเท่านั้น\nโปรดติดต่อสาขาเพื่อข้อมูลที่ถูกต้อง", wrap: true, size: "xs", color: "#aaaaaa", margin: "md" }
+                ]
+              }
             }
-          }
-        }]);
+          },
+          { type: "text", text: "📍 สาขาใกล้คุณ 3 อันดับแรก" },
+          buildBranchCarousel(top3, "📍 ใกล้คุณ", "ติดต่อสอบถาม")
+        ]);
         await appendToSheet([now, userId, userLat, userLon, mapsLink, "ติดต่อสอบถาม", "รายละเอียดการสะสมแต้มและสแตมป์", top3[0].name, top3[0].distance.toFixed(2)]);
       } else if (state?.flow === "inquiry") {
         const topic = state.topic;
